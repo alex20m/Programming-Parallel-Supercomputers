@@ -1,25 +1,16 @@
 #!/bin/bash -l
-#### Job submission script example to a CPU queue using hybrid programming model
-#### (Remember for Slurm #SBATCH, one # is active, two or
-#### more ## is commented out)
-#SBATCH --account courses
-#SBATCH --partition courses
-#### Standard parameters
-#SBATCH --time=00:05:00
-#SBATCH --mem-per-cpu=4000
-#### Number of nodes
-#SBATCH --nodes=1
-#### Number of MPI processes per node
-#SBATCH --ntasks-per-node=2
-#### Number of openMP threads per MPI process
-#SBATCH --cpus-per-task=4
-##SBATCH --output=prog.out
+#SBATCH --job-name=examplejob 
+#SBATCH --output=examplejob.o%j  # Name of stdout output file
+#SBATCH --error=examplejob.e%j   # Name of stderr error file
+#SBATCH --partition=small        
+#SBATCH --nodes=2                # Total number of nodes 
+#SBATCH --ntasks-per-node=16     # Number of mpi tasks per node
+#SBATCH --cpus-per-task=8        # Number of cores (threads) per task
+#SBATCH --time=00:10:00          # Run time (d-hh:mm:ss)
+#SBATCH --account=project_<id>   # Project for billing
 
-export OMP_PROC_BIND=TRUE
+# Set the number of threads based on --cpus-per-task
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-module purge   # unload all current modules
-module load gcc openmpi
 
-mpicc -fopenmp -o prog prog.c
-
-time srun prog
+# Launch MPI code 
+srun ./your_application # Use srun instead of mpirun or mpiexec

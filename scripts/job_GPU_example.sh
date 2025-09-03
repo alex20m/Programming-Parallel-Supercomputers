@@ -1,16 +1,10 @@
-#!/bin/bash -l
-#### For multi-GPU jobs, in --gpus-per-node N, choose N>1. Single GPU, N==1.
-#SBATCH --account courses
-#SBATCH --partition courses
-#### Standard parameters
-#SBATCH --gpus-per-node=2 
+#!/bin/bash
+#SBATCH --job-name=example
+#SBATCH --account=project_<id>    # Project ID (for billing)
+#SBATCH --partition=small-g 
+#SBATCH --gpus-per-node=1         # Amount of GPUs (per node)
+#SBATCH --nodes=1                 # Number of nodes
+#SBATCH --ntasks=1                # Number of MPI tasks
 #SBATCH --time=00:05:00
-#SBATCH --nodes=1             #Single node, for more nodes, increase
-#SBATCH --ntasks-per-node=2   #Same as number of GPUs
-##SBATCH --output=GPUcode.out
 
-module load gcc openmpi cuda cmake
-
-nvcc -o GPUcode GPUcode.cu -lmpi
-
-time srun GPUcode
+srun ./my_gpu_exe

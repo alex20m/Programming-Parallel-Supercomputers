@@ -1,26 +1,13 @@
 #!/bin/bash -l
-#### Job submission script example to a CPU queue.
-#### (Remember for Slurm #SBATCH, one # is active, two or
-#### more ## is commented out)
-####
-#SBATCH --account=courses
-#SBATCH --partition=courses
-#### Small MPI job
-#SBATCH --ntasks=4
-#SBATCH --mem-per-cpu=4000
-#SBATCH --time=00:05:00
-#### For a large MPI job:
-##SBATCH --exclusive       #Allocate whole node
-##SBATCH --nodes=2         #Use two nodes
-###SBATCH --ntasks=4      #Total amount of tasks will be ntasks mapped to the requested number of nodes
-##SBATCH --ntasks-per-node=4 #Total amount of tasks will be nodes*ntasks-per-node.
-####End of large MPI job.
-##SBATCH --output=prog.out #You can optionally name output, otherwise slurm.jobid
+#SBATCH --job-name=examplejob
+#SBATCH --output=examplejob.o%j  # Name of stdout output file
+#SBATCH --error=examplejob.e%j   # Name of stderr error file
+#SBATCH --partition=small
+#SBATCH --nodes=2                # Number of nodes
+#SBATCH --ntasks=256             # Total number of mpi tasks
+#SBATCH --mem=0                  # Allocate all the memory on each node
+#SBATCH --time=00:10:00          # Run time (d-hh:mm:ss)
+#SBATCH --account=project_<id>   # Project for billing
 
-module purge   # unload all current modules
-#Load MPI module
-module load openmpi
-
-mpicc -o prog prog.c
-
-time srun prog
+# Launch MPI code 
+srun ./your_application # Use srun instead of mpirun or mpiexec
