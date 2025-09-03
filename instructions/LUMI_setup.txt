@@ -1,0 +1,92 @@
+For Aalto & HY students
+Setting up in LUMI
+-------------------------
+
+MAKING A CSC USER AND CONNECTING TO LUMI:
+---------------------
+1. If you do not have a CSC account already, please create an account following the instructions here: https://docs.csc.fi/accounts/how-to-create-new-user-account/
+   - Create the account with Haka using your University email!
+2. Activate multi-factor authentication as described here: https://docs.csc.fi/accounts/mfa/
+3. Join the LUMI project through an invitation link sent to you by the course staff
+5. Read and accept the terms of service for LUMI at MyCSC as described here: https://docs.csc.fi/accounts/how-to-add-service-access-for-project/
+6. Install SSH client on your laptop and set up SSH keys as described here: https://docs.csc.fi/computing/connecting/ssh-keys/
+   - Follow the instructions matching the operating system of your laptop
+7. Once you have copied the public key to MyCSC, wait a few hours for the key to activate on LUMI
+8. Test the SSH connection with `ssh <username>@lumi.csc.fi`
+   - If you get a cute ASCII image of a wolf and a welcome message, then you are all set! Type `exit` to end the SSH session.
+
+CONNECTING THROUGH THE LUMI WEB INTERFACE
+---------------------
+If you're rocking an exotic OS like Windows that makes it hard for you to connect via your terminal, 
+you can always use the web interface for easier access:
+
+https://www.lumi.csc.fi/public/
+
+Choose to log in via HAKA with your University ID.
+From there, you can choose a login node shell to access LUMI on the command line. 
+
+MODULE SYSTEM:
+--------------
+
+module list
+module avail | grep partition
+module spider partition
+module load
+module unload
+module purge
+
+Settings for the course:
+
+MPI & Hybrid
+module load LUMI/24.03​
+module load partition/C
+
+HIP / GPU programming
+module load LUMI/24.03​
+module load partition/G​
+module load rocm/6.0.3
+
+C: MPI-compiler wrapper is cc
+HIP: cc
+      - MPI aware GPU communication might require the environment
+      variable `export MPICH_GPU_SUPPORT_ENABLED=1` to be set
+
+GitLab:
+-------
+
+version.aalto.fi: pps-example-codes
+Recommended: set up SSH keys
+git clone <copy repo link> repo-dir-name
+
+Disks:
+------
+
+Check available areas in LUMI with the command:
+lumi-workspaces
+
+$HOME 
+/projappl/<project-id>
+/scratch/<project-id>
+"Submitting" exercise codes to (TBC later)
+TBC
+
+SLURM:
+------
+To run jobs:
+sbatch job_script.sh
+
+It's recommended to use debug/dev-g partitions, or small/small-g
+
+squeue --me
+scancel <jobid>
+
+History of your jobs:
+slurm h
+
+scripts-dir: Example scripts for running MPI, MPI + openMP & CUDA + MPI jobs.
+
+
+See also the LUMI documentation
+--------
+
+https://docs.lumi-supercomputer.eu/
