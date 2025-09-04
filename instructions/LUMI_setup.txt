@@ -23,8 +23,8 @@ FIRST STEPS
 
 Navigate to the course project and create a personal working folder there:
 
-mkdir -p /scratch/<project>/$USER​
-cd /scratch/<project>/$USER
+mkdir -p /scratch/project_462001048/$USER​
+cd /scratch/project_462001048/$USER
 
 MODULE SYSTEM:
 --------------
