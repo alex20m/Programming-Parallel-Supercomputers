@@ -4,15 +4,8 @@ Setting up in LUMI
 
 MAKING A CSC USER AND CONNECTING TO LUMI:
 ---------------------
-1. If you do not have a CSC account already, please create an account following the instructions here: https://docs.csc.fi/accounts/how-to-create-new-user-account/
-   - Create the account with Haka using your University email!
-2. Activate multi-factor authentication as described here: https://docs.csc.fi/accounts/mfa/
-3. Join the LUMI project through an invitation link sent to you by the course staff
-5. Read and accept the terms of service for LUMI at MyCSC as described here: https://docs.csc.fi/accounts/how-to-add-service-access-for-project/
-6. Install SSH client on your laptop and set up SSH keys as described here: https://docs.csc.fi/computing/connecting/ssh-keys/
-   - Follow the instructions matching the operating system of your laptop
-7. Once you have copied the public key to MyCSC, wait a few hours for the key to activate on LUMI
-8. Test the SSH connection with `ssh <username>@lumi.csc.fi`
+1. Follow the instructions that you have received after completing the entry quiz
+2. Test the SSH connection with `ssh <username>@lumi.csc.fi`
    - If you get a cute ASCII image of a wolf and a welcome message, then you are all set! Type `exit` to end the SSH session.
 
 CONNECTING THROUGH THE LUMI WEB INTERFACE
@@ -25,6 +18,14 @@ https://www.lumi.csc.fi/public/
 Choose to log in via HAKA with your University ID.
 From there, you can choose a login node shell to access LUMI on the command line. 
 
+FIRST STEPS
+--------------
+
+Navigate to the course project and create a personal working folder there:
+
+mkdir -p /scratch/<project>/$USER​
+cd /scratch/<project>/$USER
+
 MODULE SYSTEM:
 --------------
 
@@ -33,7 +34,9 @@ module avail | grep partition
 module spider partition
 module load
 module unload
-module purge
+
+Note! Do no use "module purge" on LUMI. 
+If you need to reset your modules just log out/back in.
 
 Settings for the course:
 
@@ -67,6 +70,7 @@ lumi-workspaces
 $HOME 
 /projappl/<project-id>
 /scratch/<project-id>
+
 "Submitting" exercise codes to (TBC later)
 TBC
 
