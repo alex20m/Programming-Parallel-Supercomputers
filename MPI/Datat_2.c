@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include "mpi.h"
 
 int main() {
@@ -13,14 +14,23 @@ int main() {
   
   if (size<2) {
     printf("This program needs at least two processes\n");
+    MPI_Finalize();
     return -1;
   }  
   int asize=2;
   struct dataa {
     int i;
-    double x[asize];
+    double *x;
   };
   struct dataa buffer;
+
+    // Allocate the array dynamically
+    buffer.x = malloc(asize * sizeof(double));
+    if (!buffer.x) {
+        fprintf(stderr, "Memory allocation failed\n");
+        MPI_Finalize();
+        return -1;
+    }
 
     // Define and commit a new datatype
     int          count=2; //Two elements in the structure
@@ -29,31 +39,31 @@ int main() {
     MPI_Datatype datatypes[count]; //Array to store the types of data in each block
     MPI_Datatype mpi_struct_data; // New datatype to be created
 
-    // One integer
-    blocklength[0] = 1 ; datatypes[0]=MPI_INT;
-    displacement[0] = (size_t)&(buffer.i)-(size_t)&buffer;
-  
-    // Array of floats
-    blocklength[1] = asize ; datatypes[1]=MPI_DOUBLE;
-    displacement[1] = (size_t)&(buffer.x)-(size_t)&buffer;
+    // Integer field
+    blocklength[0] = 1;
+    datatypes[0] = MPI_INT;
+    displacement[0] = offsetof(struct dataa, i);
 
-    MPI_Type_create_struct(count,blocklength,displacement,datatypes,&mpi_struct_data);
-    MPI_Type_commit(&mpi_struct_data);
+    // Array of doubles
+    blocklength[1] = asize;
+    datatypes[1] = MPI_DOUBLE;
+    displacement[1] = offsetof(struct dataa, x);
 
-    if (rank==0) {
-	}
+  if (rank == 0) {
+      buffer.i = 1234;
+      buffer.x[0] = 10.0;
+      buffer.x[1] = 20.0;
+      printf("Sending %d %f %f\n", buffer.i, buffer.x[0], buffer.x[1]);
 
-    if (rank==0) {
-      buffer.i=1234;
-      buffer.x[0]=10.0;
-      buffer.x[1]=20.0;
-      printf("Sending %d %f %f\n: ",buffer.i,buffer.x[0],buffer.x[1]);
-      MPI_Send(&buffer,1,mpi_struct_data,1,0,MPI_COMM_WORLD);
-    } else {
-      MPI_Recv(&buffer,1,mpi_struct_data,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-      printf("Received %d %f %f\n: ",buffer.i,buffer.x[0],buffer.x[1]);
-    }
-    MPI_Type_free(&mpi_struct_data);
+      MPI_Send(&buffer.i, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+      MPI_Send(buffer.x, asize, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD);
+  } else {
+      MPI_Recv(&buffer.i, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(buffer.x, asize, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      printf("Received %d %f %f\n", buffer.i, buffer.x[0], buffer.x[1]);
+  }
 
-    MPI_Finalize();
+  free(buffer.x);
+
+  MPI_Finalize();
 }
