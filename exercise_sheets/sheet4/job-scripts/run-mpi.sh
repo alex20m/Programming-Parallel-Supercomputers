@@ -5,9 +5,7 @@
 #SBATCH --ntasks-per-node=2
 #SBATCH --nodes=2
 
-#SBATCH --account courses
-#SBATCH --partition courses
-
-module load gcc cuda cmake openmpi
+#SBATCH --account=project_462001048
+#SBATCH --partition=dev-g
 
 srun ../build/reduce-mpi reduce-mpi.result
