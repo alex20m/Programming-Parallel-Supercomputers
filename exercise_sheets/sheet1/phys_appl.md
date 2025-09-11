@@ -14,8 +14,8 @@ $$
 where $c(x, y, t)$ is the concentration field, $t$ is the time, $\boldsymbol\nabla$ is the gradient operator and the dot marks the dot product.  The velocity vector $\bm{v}$ is assumed to be presrcibed.
 
 When discretizing both the temporal and spatial derivatives using 1st order finite differences one obtains:
-$$
 
+$$
    \frac{c_{i,j}^{n+1}-c_{i,j}^{n}}{\Delta t} + v_x \frac{c_{i,j}^n-c_{i-1,j}^n}{\Delta x} + v_y \frac{c_{i,j}^n-c_{i,j-1}^n}{\Delta y} =0  \qquad \text{for} \qquad v_x,v_y > 0 \\[1mm]
    \frac{c_{i,j}^{n+1}-c_{i,j}^{n}}{\Delta t} + v_x \frac{c_{i+1,j}^n-c_{i,j}^n}{\Delta x} + v_y \frac{c_{i,j+1}^n-c_{i,j}^n}{\Delta y} =0  \qquad \text{for} \qquad v_x,v_y < 0 \\[1mm]
           c_{i,j}^n  = c(x_i,y_j,t_n)
