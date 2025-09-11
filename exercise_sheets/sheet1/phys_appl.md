@@ -1,6 +1,6 @@
 ## A physical application case
 If the equations don't render in your viewer, you can view them at
-least on Gitlab: https://version.aalto.fi/gitlab/purot1/pps-2025-exercises/-/blob/main/exercise_sheets/sheet1/sheet.md
+least on Gitlab: https://version.aalto.fi/gitlab/purot1/pps-2025-exercises/-/blob/main/exercise_sheets/sheet1/phys_appl.md
 
 Typical application cases of stencil computations are
 partial differential equations. Analytical solutions are not available for most of the setups relevant in science and technology, so instead approximative numerical solutions have to be found. This requires discretization with respect to the involved coordinates, in general one or more spatial coordinates and the time.  
