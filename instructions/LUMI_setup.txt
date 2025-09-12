@@ -71,8 +71,7 @@ $HOME
 /projappl/<project-id>
 /scratch/<project-id>
 
-"Submitting" exercise codes to (TBC later)
-TBC
+Return your submissions to /projappl/project_462001048/submissions/$USER
 
 SLURM:
 ------
