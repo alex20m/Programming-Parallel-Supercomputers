@@ -1,4 +1,4 @@
-###Python Setup
+# Python Setup
 
 See LUMI docs: `https://docs.lumi-supercomputer.eu/software/installing/python/` 
 
