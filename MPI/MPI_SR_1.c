@@ -7,12 +7,13 @@ int main(int argc, char** argv) {
   /* First send and receive */
   /* Start with bufsize 1, then keep on increasing it */
   int my_id, your_id, bufsize=10000;    // First try commenting out this
-  //int my_id, your_id, bufsize=100000;    // Secondly comment out this line. What is happening and why?
+  //int my_id, your_id, bufsize=1;    // Secondly comment out this line. What is happening and why?
+  //int my_id, your_id, bufsize=100000;    // Thirdly comment out this line. What is happening and why?
   int sendbuf[bufsize],recvbuf[bufsize];
   MPI_Status status;
 
   printf("Initializing MPI...\n");
-  printf("size of int= %d \n",sizeof(my_id));
+  printf("size of int= %ld \n",sizeof(my_id));
 
   /* Initialize the MPI execution environment */
   MPI_Init(&argc,&argv);
