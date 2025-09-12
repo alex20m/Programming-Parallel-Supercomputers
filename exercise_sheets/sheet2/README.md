@@ -17,7 +17,8 @@ The solutions should be returned in a single zip file named <your student number
 Run the following commands to get started:
 
 ```Bash
-module load gcc cmake openmpi
+module load LUMI/24.03
+module load partition/C
 cd pps-2025-exercises/exercise_sheets/sheet2
 mkdir build && cd build
 cmake .. && make -j
