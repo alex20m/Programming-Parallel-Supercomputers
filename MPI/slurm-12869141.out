@@ -1,0 +1,23 @@
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+srun: error: nid002275: tasks 0-7: Exited with exit code 2
+srun: Terminating StepId=12869141.0
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+slurmstepd: error: execve(): hello_class: No such file or directory
+srun: error: nid002276: tasks 8-15: Exited with exit code 2
+
+real	0m1.227s
+user	0m0.018s
+sys	0m0.022s
