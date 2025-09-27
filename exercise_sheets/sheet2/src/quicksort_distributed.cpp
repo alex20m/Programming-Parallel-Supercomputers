@@ -82,7 +82,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         else greater.push_back(data[i]);
     }
 
-    // --- Simple exchange between lower and upper halves ---
+    // Exchange between lower and upper halves
     int half = size / 2;
     int color = (rank < half) ? 0 : 1;
     int partner = (color == 0) ? rank + half : rank - half;
@@ -91,7 +91,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     int send_count = send_buf.size();
     int recv_count = 0;
 
-    // Exchange sizes first
     MPI_Sendrecv(&send_count, 1, MPI_INT, partner, 0,
                  &recv_count, 1, MPI_INT, partner, 0,
                  comm, MPI_STATUS_IGNORE);
@@ -108,15 +107,14 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     std::vector<float> new_data = (color == 0) ? less : greater;
     new_data.insert(new_data.end(), recv_buf.begin(), recv_buf.end());
 
-    // Copy back to original array
+    // Copy back to the data array
     for (int i = 0; i < new_data.size(); i++)
         data[start + i] = new_data[i];
 
-    // Split communicator for recursion
     MPI_Comm new_comm;
     MPI_Comm_split(comm, color, rank, &new_comm);
 
-    // Recursive quicksort on the local slice
+    // Recursive quicksort on the local part
     int part_start = start;
     int part_end = start + new_data.size();
     if (part_end > part_start) {
