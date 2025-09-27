@@ -35,39 +35,57 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
-    
-    if (end - start <= 1)
+
+    if (end - start <= 1 || size == 1) {
+        std::stable_sort(data + start, data + end);
         return;
-
-    std::vector<float> less;
-    std::vector<float> equal;
-    std::vector<float> greater;
-
-    for (int i = start; i < end; i++) {
-        if (data[i] < pivot)
-            less.push_back(data[i]);
-        else if (data[i] == pivot)
-            equal.push_back(data[i]);
-        else
-            greater.push_back(data[i]);
     }
 
-    int idx = start;
-    for (float v : less)     data[idx++] = v;
-    for (float v : equal)    data[idx++] = v;
-    for (float v : greater)  data[idx++] = v;
+    // Local partition
+    std::vector<float> less, equal, greater;
+    for (int i = start; i < end; i++) {
+        if (data[i] < pivot) less.push_back(data[i]);
+        else if (data[i] == pivot) equal.push_back(data[i]);
+        else greater.push_back(data[i]);
+    }
 
-    int mid = start + less.size();
+    // --- Simple exchange between lower and upper halves ---
+    int half = size / 2;
+    int color = (rank < half) ? 0 : 1;
+    int partner = (color == 0) ? rank + half : rank - half;
 
-    // Split communicator for distributed recursion
-    int color = (rank < size / 2) ? 0 : 1;
+    std::vector<float> send_buf = (color == 0) ? greater : less;
+    int send_count = send_buf.size();
+    int recv_count = 0;
+
+    // Exchange sizes first
+    MPI_Sendrecv(&send_count, 1, MPI_INT, partner, 0,
+                 &recv_count, 1, MPI_INT, partner, 0,
+                 comm, MPI_STATUS_IGNORE);
+
+    std::vector<float> recv_buf(recv_count);
+
+    // Exchange elements
+    if (send_count > 0)
+        MPI_Send(send_buf.data(), send_count, MPI_FLOAT, partner, 1, comm);
+    if (recv_count > 0)
+        MPI_Recv(recv_buf.data(), recv_count, MPI_FLOAT, partner, 1, comm, MPI_STATUS_IGNORE);
+
+    // Keep the correct elements
+    std::vector<float> new_data = (color == 0) ? less : greater;
+    new_data.insert(new_data.end(), recv_buf.begin(), recv_buf.end());
+
+    // Copy back to original array
+    for (int i = 0; i < new_data.size(); i++)
+        data[start + i] = new_data[i];
+
+    // Split communicator for recursion
     MPI_Comm new_comm;
     MPI_Comm_split(comm, color, rank, &new_comm);
 
-    int part_start = (color == 0) ? start : mid; // Less
-    int part_end   = (color == 0) ? mid : end; // Equal and greater
-
-    // Pick new pivot
+    // Recursive quicksort on the local slice
+    int part_start = start;
+    int part_end = start + new_data.size();
     if (part_end > part_start) {
         float new_pivot = data[part_start + (part_end - part_start)/2];
         quicksort_distributed(new_pivot, part_start, part_end, data, new_comm);
