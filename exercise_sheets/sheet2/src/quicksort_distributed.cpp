@@ -3,35 +3,6 @@
 #include <iostream>
 #include <cstdlib>
 
-void quicksort(float pivot, int start, int end, float* &data)
-{
-	if (end - start <= 1)
-		return;
-
-	std::vector<float> less;
-	std::vector<float> equal;
-	std::vector<float> greater;
-
-	for (int i = start; i < end; i++) {
-		if (data[i] < pivot)
-			less.push_back(data[i]);
-		else if (data[i] == pivot)
-			equal.push_back(data[i]);
-		else
-			greater.push_back(data[i]);
-	}
-
-	int idx = start;
-	for (float v : less)     data[idx++] = v;
-	for (float v : equal)    data[idx++] = v;
-	for (float v : greater)  data[idx++] = v;
-
-	if (!less.empty())
-        quicksort(less[0], start, start + less.size(), data);
-    if (!greater.empty())
-        quicksort(greater[0], end - greater.size(), end, data);
-}
-
 
 
 void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Comm comm)
@@ -69,8 +40,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    if (end - start <= 1 || size == 1) {
-        quicksort(pivot, start, end, data);
+    if (end - start <= 1) {
         return;
     }
 
