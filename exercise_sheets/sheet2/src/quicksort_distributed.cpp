@@ -67,55 +67,47 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    // Base case: single process, just use local quicksort
+    // Base case: only one process or trivial range
     if (size == 1 || end - start <= 1) {
         quicksort(pivot, start, end, data);
         return;
     }
 
     // Partition local array
-    std::vector<float> less, equal, greater;
+    std::vector<float> less, greater;
     for (int i = start; i < end; i++) {
         if (data[i] < pivot) less.push_back(data[i]);
-        else if (data[i] == pivot) equal.push_back(data[i]);
         else greater.push_back(data[i]);
     }
 
-    // Count elements in each group globally
-    int local_less = less.size();
-    int local_greater = greater.size();
-    int total_less, total_greater;
-    MPI_Allreduce(&local_less, &total_less, 1, MPI_INT, MPI_SUM, comm);
-    MPI_Allreduce(&local_greater, &total_greater, 1, MPI_INT, MPI_SUM, comm);
-
-    // Decide which processes handle less and greater halves
-    int half = size / 2;
-    int color = (rank < half) ? 0 : 1; // 0: less, 1: greater
+    // Determine color for splitting communicator (node 0 vs node 1)
+    int color = rank / (size / 2); // 0: first half of ranks, 1: second half
     MPI_Comm new_comm;
     MPI_Comm_split(comm, color, rank, &new_comm);
 
-    // Gather data for this sub-communicator
-    std::vector<float> local_data = (color == 0) ? less : greater;
-    int local_count = local_data.size();
-    std::vector<int> counts(size), displs(size);
-    MPI_Allgather(&local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, comm);
+    // Gather all elements for this node
+    int local_count = (color == 0) ? less.size() : greater.size();
+    std::vector<int> counts(size / 2);
+    MPI_Allgather(&local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, new_comm);
 
-    displs[0] = 0;
-    for (int i = 1; i < size; i++) displs[i] = displs[i - 1] + counts[i];
+    std::vector<int> displs(size / 2, 0);
+    for (int i = 1; i < size / 2; i++) displs[i] = displs[i - 1] + counts[i - 1];
 
-    std::vector<float> gathered(displs[size - 1] + counts[size - 1]);
+    int total = displs[size / 2 - 1] + counts[size / 2 - 1];
+    std::vector<float> gathered(total);
+
+    std::vector<float>& local_data = (color == 0) ? less : greater;
     MPI_Allgatherv(local_data.data(), local_count, MPI_FLOAT,
-                gathered.data(), counts.data(), displs.data(), MPI_FLOAT,
-                comm);
+                gathered.data(), counts.data(), displs.data(), MPI_FLOAT, new_comm);
 
-    // Copy back gathered data
+    // Copy gathered back into data
     std::copy(gathered.begin(), gathered.end(), data + start);
 
-    // Compute new pivot for next recursion
-    float new_pivot = gathered[gathered.size() / 2];
-
-    // Recursive call on sub-communicator
-    quicksort_distributed(new_pivot, start, start + gathered.size(), data, new_comm);
+    // Compute new pivot and recurse
+    if (total > 0) {
+        float new_pivot = gathered[total / 2];
+        quicksort_distributed(new_pivot, start, start + total, data, new_comm);
+    }
 
     MPI_Comm_free(&new_comm);
 
