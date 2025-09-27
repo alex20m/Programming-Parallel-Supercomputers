@@ -65,54 +65,58 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         return;
     }
     
-    // Split local data according to pivot
-    std::vector<float> less, equal, greater;
+    std::vector<float> less;
+    std::vector<float> greater;
+
     for (int i = start; i < end; i++) {
-        if (data[i] < pivot) less.push_back(data[i]);
-        else if (data[i] == pivot) equal.push_back(data[i]);
-        else greater.push_back(data[i]);
+        if (data[i] < pivot)
+            less.push_back(data[i]);
+        else
+            greater.push_back(data[i]);
     }
 
-    int rank_group = rank < size / 2 ? 0 : 1;  // split ranks into two groups
-    MPI_Comm new_comm;
-    MPI_Comm_split(comm, rank_group, rank, &new_comm);
+    int less_count = less.size();
+    int greater_count = greater.size();
+    int total_less = 0;
+    MPI_Allreduce(&less_count, &total_less, 1, MPI_INT, MPI_SUM, comm);
 
-    // Gather sizes of partitions across the new group
-    int local_size = (rank_group == 0 ? less.size() : greater.size());
-    std::vector<int> sizes;
+    // Split processes based on pivot
+    int color = rank < size / 2 ? 0 : 1;
+    MPI_Comm new_comm;
+    MPI_Comm_split(comm, color, rank, &new_comm);
+
+    // Send data to right group
+    int local_count = (color == 0) ? less.size() : greater.size();
+
+    // Get counts in new_comm
     int new_rank, new_size;
     MPI_Comm_rank(new_comm, &new_rank);
     MPI_Comm_size(new_comm, &new_size);
+    std::vector<int> counts(new_size);
+    MPI_Allgather(&local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, new_comm);
 
-    sizes.resize(new_size);
-    MPI_Allgather(&local_size, 1, MPI_INT, sizes.data(), 1, MPI_INT, new_comm);
-
-    // Compute displacement for gather
+    // Get displacement and total size
     std::vector<int> displs(new_size, 0);
-    int total = sizes[0];
+    int total = counts[0];
     for (int i = 1; i < new_size; i++) {
-        displs[i] = displs[i - 1] + sizes[i - 1];
-        total += sizes[i];
+        displs[i] = displs[i - 1] + counts[i - 1];
+        total += counts[i];
     }
 
-    // Gather all elements of this partition
     std::vector<float> gathered(total);
-    MPI_Allgatherv(
-        rank_group == 0 ? less.data() : greater.data(), local_size, MPI_FLOAT,
-        gathered.data(), sizes.data(), displs.data(), MPI_FLOAT,
-        new_comm
-    );
+    MPI_Allgatherv((color == 0 ? less.data() : greater.data()), local_count, MPI_FLOAT,
+                   gathered.data(), counts.data(), displs.data(), MPI_FLOAT, new_comm);
 
-    // Copy gathered data back to the correct segment
+    // Copy data back
     for (int i = 0; i < total; i++) {
         data[start + i] = gathered[i];
     }
 
-    // Choose new pivot (first element in the gathered partition)
-    float new_pivot = gathered.empty() ? pivot : gathered[0];
-
-    // Recursive call for the new communicator
-    quicksort_distributed(new_pivot, start, start + total, data, new_comm);
+    // Recursive call with new communicator
+    if (!gathered.empty()) {
+        float new_pivot = gathered[0];
+        quicksort_distributed(new_pivot, start, start + total, data, new_comm);
+    }
 
     MPI_Comm_free(&new_comm);
 }
