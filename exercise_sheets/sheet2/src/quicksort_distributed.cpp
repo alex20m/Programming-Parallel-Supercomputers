@@ -46,7 +46,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         quicksort(pivot, start, end, data);
         return;
     }
-    const int n = end - start;
 
     // --- Partition local data into < pivot and >= pivot ---
     std::vector<float> less, greater;
@@ -68,23 +67,27 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         }
         else {
             // --- Broadcast pivot to all processes in communicator ---
-            MPI_Bcast(&data[start], n, MPI_FLOAT, 0, comm);
+            MPI_Bcast(&data[start], end - start, MPI_FLOAT, 0, comm);
         }
     }
 
     // --- Split communicator: ranks < half handle "less", others "greater" ---
-    int color = (rank < size / 2) ? 0 : 1;
+    int leftSize = (total_less > 0 && total_greater > 0)
+    ? std::max(1, std::min(size - 1, size * total_less / n))
+    : (total_less > 0 ? size - 1 : 1);
+
+    int color = (rank < leftSize) ? 0 : 1;
+
     MPI_Comm new_comm;
     MPI_Comm_split(comm, color, rank, &new_comm);
 
     // --- Recursive distributed call ---
-    if (color == 0 && total_less > 0) {
+    if (color == 0) {
         float new_pivot = data[start];
         quicksort_distributed(new_pivot, start, mid, data, new_comm);
-    } else if (color == 1 && total_greater > 0) {
+    } else if (color == 1) {
         float new_pivot = data[mid];
         quicksort_distributed(new_pivot, mid, end, data, new_comm);
     }
-
     MPI_Comm_free(&new_comm);
 }
