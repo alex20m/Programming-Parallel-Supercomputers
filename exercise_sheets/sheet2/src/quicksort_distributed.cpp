@@ -38,11 +38,12 @@ void quicksort(float pivot, int start, int end, float* &data)
 // Distributed quicksort
 void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Comm comm) {
     int rank, size;
+    int n = end - start;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
     // Base case: only one process or small chunk -> sequential sort
-    if (size == 1 || end - start <= 1) {
+    if (size == 1 || n <= 1) {
         quicksort(pivot, start, end, data);
         return;
     }
@@ -58,7 +59,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     int total_less, total_greater;
 
     int mid = start + total_less;
-    int n = end - start;
     if (total_less > 0) std::memcpy(&data[start], less.data(), total_less * sizeof(float));
     if (total_greater > 0) std::memcpy(&data[mid], greater.data(), total_greater * sizeof(float));
 
@@ -91,4 +91,8 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         quicksort_distributed(new_pivot, mid, end, data, new_comm);
     }
     MPI_Comm_free(&new_comm);
+    const int leftParent = 0;
+    const int rightParent = leftSize;
+    MPI_Bcast(&data[start], total_less, MPI_FLOAT, leftParent, comm);
+    MPI_Bcast(&data[mid], total_greater, MPI_FLOAT, rightParent, comm);
 }
