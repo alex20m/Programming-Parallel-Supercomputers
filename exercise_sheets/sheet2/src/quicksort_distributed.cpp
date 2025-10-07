@@ -60,7 +60,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
 
     int mid = start + total_less;
     if (total_less > 0) std::memcpy(&data[start], less.data(), total_less * sizeof(float));
-    if (total_greater > 0) std::memcpy(&data[mid], greater.data(), greater * sizeof(float));
+    if (total_greater > 0) std::memcpy(&data[mid], greater.data(), total_greater * sizeof(float));
 
     if (total_less == 0 || total_greater == 0) {
         if (rank == 0){
@@ -68,7 +68,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         }
         else {
             // --- Broadcast pivot to all processes in communicator ---
-            MPI_Bcast(&data[start], n, MPI_FLOAT, comm);
+            MPI_Bcast(&data[start], n, MPI_FLOAT, 0, comm);
         }
     }
 
