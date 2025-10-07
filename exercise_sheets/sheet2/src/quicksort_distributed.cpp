@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdlib>
+#include <cstring> 
 
 // Sequential quicksort
 void quicksort(float pivot, int start, int end, float* &data)
