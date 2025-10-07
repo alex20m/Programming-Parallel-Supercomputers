@@ -45,7 +45,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         quicksort(pivot, start, end, data);
         return;
     }
-    const int n = end - start
+    const int n = end - start;
 
     // --- Partition local data into < pivot and >= pivot ---
     std::vector<float> less, greater;
@@ -57,7 +57,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     int local_greater = greater.size();
     int total_less, total_greater;
 
-    int mid = start + total_less
+    int mid = start + total_less;
     if (total_less > 0) std::memcpy(&data[start], less.data(), total_less * sizeof(float));
     if (total_greater > 0) std::memcpy(&data[mid], greater.data(), greater * sizeof(float));
 
