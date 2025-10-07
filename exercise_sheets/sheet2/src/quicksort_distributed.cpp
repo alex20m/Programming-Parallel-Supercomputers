@@ -5,44 +5,85 @@
 #include <cstdlib>
 
 // Sequential quicksort
-void quicksort(float pivot, int start, int end, float* &data) {
-    if (end - start <= 1) return;
-    std::vector<float> less, equal, greater;
-    for (int i = start; i < end; i++)
-        if (data[i] < pivot) less.push_back(data[i]);
-        else if (data[i] == pivot) equal.push_back(data[i]);
-        else greater.push_back(data[i]);
-    int idx = start;
-    for (float v : less) data[idx++] = v;
-    for (float v : equal) data[idx++] = v;
-    for (float v : greater) data[idx++] = v;
-    if (!less.empty()) quicksort(less[0], start, start + less.size(), data);
-    if (!greater.empty()) quicksort(greater[0], end - greater.size(), end, data);
+void quicksort(float pivot, int start, int end, float* &data)
+{
+	if (end - start <= 1)
+		return;
+
+	std::vector<float> less;
+	std::vector<float> equal;
+	std::vector<float> greater;
+
+	for (int i = start; i < end; i++) {
+		if (data[i] < pivot)
+			less.push_back(data[i]);
+		else if (data[i] == pivot)
+			equal.push_back(data[i]);
+		else
+			greater.push_back(data[i]);
+	}
+
+	int idx = start;
+	for (float v : less)     data[idx++] = v;
+	for (float v : equal)    data[idx++] = v;
+	for (float v : greater)  data[idx++] = v;
+
+	if (!less.empty())
+        quicksort(less[0], start, start + less.size(), data);
+    if (!greater.empty())
+        quicksort(greater[0], end - greater.size(), end, data);
 }
 
 // Distributed quicksort
 void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Comm comm) {
-    int rank, size; MPI_Comm_rank(comm, &rank); MPI_Comm_size(comm, &size);
-    if (size == 1 || end - start <= 1) { quicksort(pivot, start, end, data); return; }
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
+    // Base case: only one process or small chunk -> sequential sort
+    if (size == 1 || end - start <= 1) {
+        quicksort(pivot, start, end, data);
+        return;
+    }
+    const int n = end - start
+
+    // --- Partition local data into < pivot and >= pivot ---
     std::vector<float> less, greater;
     for (int i = start; i < end; i++)
         (data[i] < pivot ? less : greater).push_back(data[i]);
 
-    int half = size/2, color = rank < half ? 0 : 1;
-    MPI_Comm new_comm; MPI_Comm_split(comm, color, rank, &new_comm);
+    // --- Compute how many elements in each group ---
+    int local_less = less.size();
+    int local_greater = greater.size();
+    int total_less, total_greater;
 
-    std::vector<float>& local = color==0 ? less : greater;
-    int local_count = local.size(), new_size; MPI_Comm_size(new_comm, &new_size);
-    std::vector<int> counts(new_size), displs(new_size,0);
-    MPI_Allgather(&local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, new_comm);
-    for (int i=1;i<new_size;i++) displs[i]=displs[i-1]+counts[i-1];
+    int mid = start + total_less
+    if (total_less > 0) std::memcpy(&data[start], less.data(), total_less * sizeof(float));
+    if (total_greater > 0) std::memcpy(&data[mid], greater.data(), greater * sizeof(float));
 
-    int total = displs[new_size-1]+counts[new_size-1];
-    std::vector<float> gathered(total);
-    MPI_Allgatherv(local.data(), local_count, MPI_FLOAT, gathered.data(), counts.data(), displs.data(), MPI_FLOAT, new_comm);
-    std::copy(gathered.begin(), gathered.end(), data+start);
+    if (total_less == 0 || total_greater == 0) {
+        if (rank == 0){
+            quicksort(pivot, start, end, data);
+        }
+        else {
+            // --- Broadcast pivot to all processes in communicator ---
+            MPI_Bcast(&data[start], n, MPI_FLOAT, comm);
+        }
+    }
 
-    if (!gathered.empty()) quicksort_distributed(gathered[total/2], start, start+total, data, new_comm);
+    // --- Split communicator: ranks < half handle "less", others "greater" ---
+    int color = (rank < size / 2) ? 0 : 1;
+    MPI_Comm new_comm;
+    MPI_Comm_split(comm, color, rank, &new_comm);
+
+    // --- Recursive distributed call ---
+    if (color == 0 && total_less > 0) {
+        float new_pivot = data[start];
+        quicksort_distributed(new_pivot, start, mid, data, new_comm);
+    } else if (color == 1 && total_greater > 0) {
+        float new_pivot = data[mid];
+        quicksort_distributed(new_pivot, mid, end, data, new_comm);
+    }
+
     MPI_Comm_free(&new_comm);
 }
