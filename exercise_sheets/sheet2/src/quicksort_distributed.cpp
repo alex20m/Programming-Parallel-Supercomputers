@@ -80,6 +80,7 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
         float new_pivot = data[mid];
         quicksort_distributed(new_pivot, mid, end, data, new_comm);
     }
+
     MPI_Comm_free(&new_comm);
     const int leftParent = 0;
     const int rightParent = leftSize;
