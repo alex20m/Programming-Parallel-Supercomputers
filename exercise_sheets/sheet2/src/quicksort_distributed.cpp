@@ -45,7 +45,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     // Base case: only one process or small chunk -> sequential sort
     if (size == 1) {
         quicksort(pivot, start, end, data);
-        MPI_Bcast(&data[start], n, MPI_FLOAT, 0, comm);
         return;
     }
 
