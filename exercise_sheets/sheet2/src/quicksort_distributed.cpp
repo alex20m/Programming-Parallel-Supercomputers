@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cstring> 
 
-// Sequential quicksort
 void quicksort(float pivot, int start, int end, float* &data)
 {
 	if (end - start <= 1)
@@ -35,25 +34,21 @@ void quicksort(float pivot, int start, int end, float* &data)
         quicksort(greater[0], end - greater.size(), end, data);
 }
 
-// Distributed quicksort
 void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Comm comm) {
     int rank, size;
     int n = end - start;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    // Base case: only one process or small chunk -> sequential sort
     if (size == 1) {
         quicksort(pivot, start, end, data);
         return;
     }
 
-    // --- Partition local data into < pivot and >= pivot ---
     std::vector<float> less, greater;
     for (int i = start; i < end; i++)
         (data[i] < pivot ? less : greater).push_back(data[i]);
 
-    // --- Compute how many elements in each group ---
     int total_less = less.size();
     int total_greater = greater.size();
 
@@ -61,7 +56,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     if (total_less > 0) std::memcpy(&data[start], less.data(), total_less * sizeof(float));
     if (total_greater > 0) std::memcpy(&data[mid], greater.data(), total_greater * sizeof(float));
 
-    // --- Split communicator: ranks < half handle "less", others "greater" ---
     int leftSize = (total_less > 0 && total_greater > 0)
     ? std::max(1, std::min(size - 1, size * total_less / n))
     : (total_less > 0 ? size - 1 : 1);
@@ -71,7 +65,6 @@ void quicksort_distributed(float pivot, int start, int end, float* &data, MPI_Co
     MPI_Comm new_comm;
     MPI_Comm_split(comm, color, rank, &new_comm);
 
-    // --- Recursive distributed call ---
     if (color == 0) {
         float new_pivot = data[start];
         quicksort_distributed(new_pivot, start, mid, data, new_comm);
