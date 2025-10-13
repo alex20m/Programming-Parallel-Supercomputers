@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <mpi.h>
 #include "heat.h"
+#include <omp.h>
 
 /* Exchange the boundary values */
 void exchange_init(field *temperature, parallel_data *parallel)
@@ -63,6 +64,8 @@ void evolve_interior(field *curr, field *prev, double a, double dt)
      * are not updated. */
     dx2 = prev->dx * prev->dx;
     dy2 = prev->dy * prev->dy;
+
+    #pragma omp parallel for private(j, ic, iu, id, il, ir) collapse(2)
     for (i = 2; i < curr->nx; i++) {
         for (j = 2; j < curr->ny; j++) {
             ic = idx(i, j, width);
@@ -98,6 +101,7 @@ void evolve_edges(field *curr, field *prev, double a, double dt)
     dy2 = prev->dy * prev->dy;
 
     i = 1;
+    #pragma omp parallel for private(j, ic, iu, id, il, ir)
     for (j = 1; j < curr->ny + 1; j++) {
         ic = idx(i, j, width);
         iu = idx(i+1, j, width);
@@ -113,6 +117,7 @@ void evolve_edges(field *curr, field *prev, double a, double dt)
                              prev->data[il]) / dy2);
     }
     i = curr -> nx;
+    #pragma omp parallel for private(j, ic, iu, id, il, ir)
     for (j = 1; j < curr->ny + 1; j++) {
         ic = idx(i, j, width);
         iu = idx(i+1, j, width);
@@ -128,6 +133,7 @@ void evolve_edges(field *curr, field *prev, double a, double dt)
                              prev->data[il]) / dy2);
     }
     j = 1;
+    #pragma omp parallel for private(j, ic, iu, id, il, ir)
     for (i = 1; i < curr->nx + 1; i++) {
         ic = idx(i, j, width);
         iu = idx(i+1, j, width);
@@ -143,6 +149,7 @@ void evolve_edges(field *curr, field *prev, double a, double dt)
                              prev->data[il]) / dy2);
     }
     j = curr -> ny;
+    #pragma omp parallel for private(j, ic, iu, id, il, ir)
     for (i = 1; i < curr->nx + 1; i++) {
         ic = idx(i, j, width);
         iu = idx(i+1, j, width);

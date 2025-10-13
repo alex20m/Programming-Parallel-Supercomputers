@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <mpi.h>
+#include <omp.h>
 
 #include "heat.h"
 

@@ -8,12 +8,13 @@
 #### course), you can comment this out (comment = two `##`) and
 #### maybe you will have shorter queue time.
 #SBATCH --account=project_462001048
-#SBATCH --partition=dev-g
+#SBATCH --partition=debug
 #### General resource parameters:
 #SBATCH --time=00:10:00
 #### Number of nodes, number of MPI processes is nodes x ntasks
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=1
 ####Specify output file, otherwise slurm-<jobid>.out generated
 ##SBATCH --output=DE.out
 ####Special resource allocation, do not use unless instructed
