@@ -1,6 +1,6 @@
 CC=mpicc
-CCFLAGS=-O3 -Wall 
-LDFLAGS=
+CCFLAGS=-O3 -Wall -fopenmp
+LDFLAGS=-fopenmp
 LIBS=-lpng -lm
 
 EXE=heat_mpi
