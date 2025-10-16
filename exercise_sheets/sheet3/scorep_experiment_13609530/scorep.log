@@ -1,0 +1,8 @@
+S=C=A=N: Thu Oct 16 14:37:17 2025: Collect start
+/usr/bin/srun heat_mpi 400 400 100
+Using domain decomposition 4 x 2
+Local domain size 100 x 200
+Generating default data from: rows, columns, nsteps: 400, 400, 100
+Iteration took 1.046 seconds.
+Reference value at 5,5: 71.585467
+S=C=A=N: Thu Oct 16 14:37:30 2025: Collect done (status=0) 13s

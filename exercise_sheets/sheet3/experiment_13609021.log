@@ -1,2 +1,0 @@
-S=C=A=N: Thu Oct 16 14:06:25 2025: Collect start
-/usr/bin/srun heat_mpi 4000 4000 1000
