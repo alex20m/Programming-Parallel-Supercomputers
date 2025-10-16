@@ -1,4 +1,4 @@
-CC=mpicc
+CC=scorep mpicc
 CCFLAGS=-O3 -Wall -fopenmp
 LDFLAGS=-fopenmp
 LIBS=-lpng -lm
