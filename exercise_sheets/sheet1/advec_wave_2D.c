@@ -102,11 +102,11 @@ int main(int argc, char** argv)
     nprocy = atoi(argv[2]); 
 
     int domain_nx = atoi(argv[3]),                 // number of gridpoints in x direction
-        subdomain_nx = domain_nx / nprocx;                            // subdomain x-size w/o halos
+        subdomain_nx = domain_nx / nprocx,                            // subdomain x-size w/o halos
         subdomain_mx = subdomain_nx + 2 * halo_width;                             //                  with halos
 
     int domain_ny = atoi(argv[4]),                 // number of gridpoints in y direction
-        subdomain_ny = domain_ny / nprocy;                             // subdomain y-size w/o halos
+        subdomain_ny = domain_ny / nprocy,                             // subdomain y-size w/o halos
         subdomain_my = subdomain_ny + 2 * halo_width;                            //                  with halos
         
     // Find neighboring processes!
