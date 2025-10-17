@@ -169,8 +169,6 @@ int main(int argc, char** argv)
     for (unsigned int iter = 0; iter < iterations; ++iter)
     {
         MPI_Win_fence(0, win);
-
-        // X-direction upwind halo
         if (u_x > 0 && ipx > 0) {
             MPI_Get(&data[0][halo_width], 1, column_type,
                     find_proc(ipx-1, ipy, nprocx, nprocy), subdomain_nx, 1,
@@ -181,7 +179,6 @@ int main(int argc, char** argv)
                     column_type, win);
         }
 
-        // Y-direction upwind halo
         if (u_y > 0 && ipy > 0) {
             MPI_Get(&data[halo_width][0], subdomain_mx*halo_width, MPI_FLOAT,
                     find_proc(ipx, ipy-1, nprocx, nprocy), 0, halo_width,
@@ -194,42 +191,41 @@ int main(int argc, char** argv)
 
         MPI_Win_fence(0, win);
 
-        // Compute rhs in the **interior region** (excluding halos)
         int xrange[2] = {halo_width, halo_width + subdomain_nx};
         int yrange[2] = {halo_width, halo_width + subdomain_ny};
         rhs(xrange, yrange, subdomain_my, data, d_data);
-
-        // Update field in data using rhs in d_data (Euler's method):
         for (ix = ixstart; ix < ixstop; ++ix)
             for (iy = iystart; iy < iystop; ++iy)
             {
                 data[ix][iy] += dt*d_data[ix][iy];
             }
         t = t+dt;
-
-        // Optional: output for visualization every few iterations
-        if (iter % 100 == 0 && rank == 0) {
-            printf("Iteration %u completed, t = %f\n", iter, t);
-        }
     }
 
-    // Write final results to file
-    char fname[256];
-    sprintf(fname, "own_results_process_%d", rank);
-    FILE* fptr_final = fopen(fname, "w");
-    if (!fptr_final) {
-        fprintf(stderr, "Error opening file for process %d\n", rank);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
+    FILE* fptr_own = get_file_ptr("own_solution_",rank);
+    t=0.;
+    for (int iter=0; iter<iterations; iter++) {
+        for (ix=0;ix<subdomain_mx;ix++) xshift[ix] = x[ix] - u_x*t;
+        for (iy=0;iy<subdomain_my;iy++) yshift[iy] = y[iy] - u_y*t;
 
-    for (ix = ixstart; ix < ixstop; ++ix) {
-        for (iy = iystart; iy < iystop; ++iy) {
-            fprintf(fptr_final, "%f ", data[ix][iy]);
-        }
-        fprintf(fptr_final, "\n");
+        if (u_y==0.)
+	{
+          for (int ix=ixstart; ix < ixstop; ++ix) fprintf(fptr_own,"%f ",data[iter][ix][iystart]);
+	}
+        else if(u_x == 0.)
+	{
+          for (int iy=iystart; iy < iystop; ++iy) fprintf(fptr_own,"%f ",data[iter][ixstart][iy]);
+	}
+        else
+	{
+          for (int ix=ixstart; ix < ixstop; ++ix) 
+            	for (int iy=iystart; iy < iystop; ++iy)
+			fprintf(fptr_own,"%f ",data[iter][ix][iy]);
+	}
+      fprintf(fptr_own,"\n");
+      t += dt;
     }
-
-    fclose(fptr_final);
+    fclose(fptr_own);
     // Finalize timing!
 
     // analytic solution in array data_an:
