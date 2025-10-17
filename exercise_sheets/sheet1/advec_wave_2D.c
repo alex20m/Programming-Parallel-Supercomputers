@@ -178,7 +178,6 @@ int main(int argc, char** argv)
                     find_proc(ipx+1, ipy, nprocx, nprocy), halo_width, 1,
                     column_type, win);
         }
-
         if (u_y > 0 && ipy > 0) {
             MPI_Get(&data[halo_width][0], subdomain_mx*halo_width, MPI_FLOAT,
                     find_proc(ipx, ipy-1, nprocx, nprocy), 0, halo_width,
@@ -202,30 +201,10 @@ int main(int argc, char** argv)
         t = t+dt;
     }
 
-    FILE* fptr_own = get_file_ptr("own_solution_",rank);
-    t=0.;
-    for (int iter=0; iter<iterations; iter++) {
-        for (ix=0;ix<subdomain_mx;ix++) xshift[ix] = x[ix] - u_x*t;
-        for (iy=0;iy<subdomain_my;iy++) yshift[iy] = y[iy] - u_y*t;
-
-        if (u_y==0.)
-	{
-          for (int ix=ixstart; ix < ixstop; ++ix) fprintf(fptr_own,"%f ",data[iter][ix][iystart]);
-	}
-        else if(u_x == 0.)
-	{
-          for (int iy=iystart; iy < iystop; ++iy) fprintf(fptr_own,"%f ",data[iter][ixstart][iy]);
-	}
-        else
-	{
-          for (int ix=ixstart; ix < ixstop; ++ix) 
-            	for (int iy=iystart; iy < iystop; ++iy)
-			fprintf(fptr_own,"%f ",data[iter][ix][iy]);
-	}
-      fprintf(fptr_own,"\n");
-      t += dt;
-    }
-    fclose(fptr_own);
+    printf("Process %d first row: ", rank);
+    for (iy = halo_width; iy < halo_width + 5; ++iy)
+        printf("%f ", data[halo_width][iy]);
+    printf("\n");
     // Finalize timing!
 
     // analytic solution in array data_an:
