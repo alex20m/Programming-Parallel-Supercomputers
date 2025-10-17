@@ -39,7 +39,6 @@ float ugrad_upw(int i, int j, int ny, float data[][ny]){
 }
 
 int find_proc(int ipx, int ipy, int nprocx, int nprocy) {
-    // row-major ordering
     return ipy * nprocx + ipx;
 }
 
@@ -169,32 +168,31 @@ int main(int argc, char** argv)
 
     for (unsigned int iter = 0; iter < iterations; ++iter)
     {
-        // Start halo exchange: fetch data from neighboring processes
         MPI_Win_fence(0, win);
 
         // X-direction upwind halo
-        if (u_x > 0 && ipx > 0) { // fetch from left neighbor only
+        if (u_x > 0 && ipx > 0) {
             MPI_Get(&data[0][halo_width], 1, column_type,
                     find_proc(ipx-1, ipy, nprocx, nprocy), subdomain_nx, 1,
                     column_type, win);
-        } else if (u_x < 0 && ipx < nprocx-1) { // fetch from right neighbor only
+        } else if (u_x < 0 && ipx < nprocx-1) {
             MPI_Get(&data[halo_width+subdomain_nx][halo_width], 1, column_type,
                     find_proc(ipx+1, ipy, nprocx, nprocy), halo_width, 1,
                     column_type, win);
         }
 
         // Y-direction upwind halo
-        if (u_y > 0 && ipy > 0) { // fetch from bottom neighbor only
+        if (u_y > 0 && ipy > 0) {
             MPI_Get(&data[halo_width][0], subdomain_mx*halo_width, MPI_FLOAT,
                     find_proc(ipx, ipy-1, nprocx, nprocy), 0, halo_width,
                     MPI_FLOAT, win);
-        } else if (u_y < 0 && ipy < nprocy-1) { // fetch from top neighbor only
+        } else if (u_y < 0 && ipy < nprocy-1) {
             MPI_Get(&data[halo_width][halo_width+subdomain_ny], subdomain_mx*halo_width, MPI_FLOAT,
                     find_proc(ipx, ipy+1, nprocx, nprocy), 0, halo_width,
                     MPI_FLOAT, win);
         }
 
-        MPI_Win_fence(0, win); // wait for all MPI_Get to complete
+        MPI_Win_fence(0, win);
 
         // Compute rhs in the **interior region** (excluding halos)
         int xrange[2] = {halo_width, halo_width + subdomain_nx};
