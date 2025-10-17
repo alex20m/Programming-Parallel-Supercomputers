@@ -4,11 +4,15 @@
 #include <mpi.h>
 #include <math.h>
 
-static const int halo_width= ;    // fill in halo_width
+static const int halo_width=2;    // fill in halo_width
 static int rank;
+static int nprocx, nprocy;
+static int nprocs; // total number of MPI processes
+int ipx, ipy;
+
 
 const float pi=3.14159;
-const float u_x= , u_y= , c_amp=  // choose velocity components and amplitude of initial condition
+const float u_x=1.0, u_y= 0.5, c_amp=1.0;  // choose velocity components and amplitude of initial condition
 const float cdt=.3;               // safety factor for timestep (experiment!)
 static float dx, dy;              // grid spacings
 
@@ -34,14 +38,16 @@ float ugrad_upw(int i, int j, int ny, float data[][ny]){
     return sum_x + sum_y;
 }
 
-int find_proc(int ipx, int ipy, /*...*/)
-{
-// Implement finding process rank from coordinates ipx, ipy in process grid!
+int find_proc(int ipx, int ipy, int nprocx, int nprocy) {
+    // row-major ordering
+    return ipy * nprocx + ipx;
 }
 
-int* find_proc_coords(int rank, /*...*/)
-{
-// Implement finding process coordinates ipx, ipy in process grid from process rank!
+int* find_proc_coords(int rank, int nprocx, int nprocy) {
+    static int coords[2];
+    coords[0] = rank % nprocx;
+    coords[1] = rank / nprocx;
+    return coords;
 }
 
 void initcond(int nx, int ny, float x[], float y[], float data[][ny+2*halo_width])
@@ -85,19 +91,24 @@ int main(int argc, char** argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     // Check compatibility of argv parameters!
+    if (nprocs != nprocx * nprocy) {
+        if (rank == 0)
+            fprintf(stderr,"Custom Error: MPI processes (%d) != nprocx * nprocy (%d)\n", nprocs, nprocx*nprocy);
+        MPI_Abort(MPI_COMM_WORLD,1);
+    }
 
 
     nprocx = atoi(argv[1]); 
     nprocy = atoi(argv[2]); 
 
     int domain_nx = atoi(argv[3]),                 // number of gridpoints in x direction
-        subdomain_nx =                             // subdomain x-size w/o halos
-        subdomain_mx =                             //                  with halos
+        subdomain_nx = domain_nx / nprocx;                            // subdomain x-size w/o halos
+        subdomain_mx = subdomain_nx + 2 * halo_width;                             //                  with halos
 
     int domain_ny = atoi(argv[4]),                 // number of gridpoints in y direction
-        subdomain_ny =                             // subdomain y-size w/o halos
-        subdomain_my =                             //                  with halos
-
+        subdomain_ny = domain_ny / nprocy;                             // subdomain y-size w/o halos
+        subdomain_my = subdomain_ny + 2 * halo_width;                            //                  with halos
+        
     // Find neighboring processes!
     int *proc_coords = find_proc_coords(rank,nprocx,nprocy);
     ipx=proc_coords[0]; ipy=proc_coords[1];
@@ -126,7 +137,8 @@ int main(int argc, char** argv)
 
     //Create MPI Windows for one-sided communication 
     MPI_Win win;
-    MPI_Win_create(/*...*/)
+    MPI_Win_create(data, subdomain_mx * subdomain_my * sizeof(float), sizeof(float),
+                   MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
     unsigned int iterations = atoi(argv[5]);       // number of iterations=timesteps
 
@@ -146,11 +158,11 @@ int main(int argc, char** argv)
 
     // Initialize timing!
     //Setup subdomain bounds
-    int ixstart = ...
-    int iystart = ...
+    int ixstart = halo_width;
+    int iystart = halo_width;
 
-    int ixend = ...
-    int iyend = ...
+    int ixstop = halo_width + subdomain_nx;
+    int iystop = halo_width + subdomain_ny;
 
 
     for (unsigned int iter = 0; iter < iterations; ++iter)
@@ -199,7 +211,7 @@ int main(int argc, char** argv)
 	{
           for (int ix=ixstart; ix < ixstop; ++ix) 
             	for (int iy=iystart; iy < iystop; ++iy)
-			fprintf(fptr_analytical,"%f ",data_an[iter][ix][iy])
+			fprintf(fptr_analytical,"%f ",data_an[iter][ix][iy]);
 	}
       fprintf(fptr_analytical,"\n");
       t += dt;
