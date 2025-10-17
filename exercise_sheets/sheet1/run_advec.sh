@@ -6,4 +6,4 @@
 #SBATCH --time=00:05:00
 ##BATCH --output=output_prog.out #You can optionally name output, otherwise slurm.jobid
 
-srun ./adevc_program 100 100 2 1 10
+srun ./adevc_program 12 12 2 1 10

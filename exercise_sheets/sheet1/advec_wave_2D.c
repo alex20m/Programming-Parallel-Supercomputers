@@ -90,16 +90,15 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    nprocx = atoi(argv[1]); 
+    nprocy = atoi(argv[2]);
+
     // Check compatibility of argv parameters!
     if (nprocs != nprocx * nprocy) {
         if (rank == 0)
-            fprintf(stderr,"Custom Error: MPI processes (%d) != nprocx * nprocy (%d)\n", nprocs, nprocx*nprocy);
+            fprintf(stderr,"Custom Error: MPI processes (%d) != nprocx * nprocy (%d * %d)\n", nprocs, nprocx, nprocy);
         MPI_Abort(MPI_COMM_WORLD,1);
-    }
-
-
-    nprocx = atoi(argv[1]); 
-    nprocy = atoi(argv[2]); 
+    } 
 
     int domain_nx = atoi(argv[3]),                 // number of gridpoints in x direction
         subdomain_nx = domain_nx / nprocx,                            // subdomain x-size w/o halos
@@ -167,11 +166,37 @@ int main(int argc, char** argv)
 
     for (unsigned int iter = 0; iter < iterations; ++iter)
     {
-        // Get the data from neighbors!
+        // Start halo exchange: fetch data from neighboring processes
+        MPI_Win_fence(0, win);
 
-        // Compute rhs. Think about concurrency of computation and data fetching by MPI_Get!
+        // X-direction upwind halo
+        if (u_x > 0 && ipx > 0) { // fetch from left neighbor only
+            MPI_Get(&data[0][halo_width], halo_width*subdomain_my, MPI_FLOAT,
+                    find_proc(ipx-1, ipy, nprocx, nprocy), subdomain_nx, subdomain_my,
+                    MPI_FLOAT, win);
+        } else if (u_x < 0 && ipx < nprocx-1) { // fetch from right neighbor only
+            MPI_Get(&data[halo_width+subdomain_nx][halo_width], halo_width*subdomain_my, MPI_FLOAT,
+                    find_proc(ipx+1, ipy, nprocx, nprocy), halo_width, subdomain_my,
+                    MPI_FLOAT, win);
+        }
 
-        // Data arrived -> compute stencils in all points that *are* affected by halo points.
+        // Y-direction upwind halo
+        if (u_y > 0 && ipy > 0) { // fetch from bottom neighbor only
+            MPI_Get(&data[halo_width][0], subdomain_mx*halo_width, MPI_FLOAT,
+                    find_proc(ipx, ipy-1, nprocx, nprocy), 0, halo_width,
+                    MPI_FLOAT, win);
+        } else if (u_y < 0 && ipy < nprocy-1) { // fetch from top neighbor only
+            MPI_Get(&data[halo_width][halo_width+subdomain_ny], subdomain_mx*halo_width, MPI_FLOAT,
+                    find_proc(ipx, ipy+1, nprocx, nprocy), 0, halo_width,
+                    MPI_FLOAT, win);
+        }
+
+        MPI_Win_fence(0, win); // wait for all MPI_Get to complete
+
+        // Compute rhs in the **interior region** (excluding halos)
+        int xrange[2] = {halo_width, halo_width + subdomain_nx};
+        int yrange[2] = {halo_width, halo_width + subdomain_ny};
+        rhs(xrange, yrange, subdomain_my, data, d_data);
 
         // Update field in data using rhs in d_data (Euler's method):
         for (ix = ixstart; ix < ixstop; ++ix)
@@ -181,7 +206,10 @@ int main(int argc, char** argv)
             }
         t = t+dt;
 
-        // Output solution for checking/visualisation with choosable cadence!
+        // Optional: output for visualization every few iterations
+        if (iter % 100 == 0 && rank == 0) {
+            printf("Iteration %u completed, t = %f\n", iter, t);
+        }
     }
 
     // Finalize timing!
