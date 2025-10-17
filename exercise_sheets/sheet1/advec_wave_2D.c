@@ -133,6 +133,9 @@ int main(int argc, char** argv)
     initcond(subdomain_nx, subdomain_ny, x, y, data);
 
     // Think about convenient data types to access non-contiguous portions of array data!
+    MPI_Datatype column_type;
+    MPI_Type_vector(subdomain_mx, halo_width, subdomain_my, MPI_FLOAT, &column_type);
+    MPI_Type_commit(&column_type);
 
     //Create MPI Windows for one-sided communication 
     MPI_Win win;
@@ -171,13 +174,13 @@ int main(int argc, char** argv)
 
         // X-direction upwind halo
         if (u_x > 0 && ipx > 0) { // fetch from left neighbor only
-            MPI_Get(&data[0][halo_width], halo_width*subdomain_my, MPI_FLOAT,
-                    find_proc(ipx-1, ipy, nprocx, nprocy), subdomain_nx, subdomain_my,
-                    MPI_FLOAT, win);
+            MPI_Get(&data[0][halo_width], 1, column_type,
+                    find_proc(ipx-1, ipy, nprocx, nprocy), subdomain_nx, 1,
+                    column_type, win);
         } else if (u_x < 0 && ipx < nprocx-1) { // fetch from right neighbor only
-            MPI_Get(&data[halo_width+subdomain_nx][halo_width], halo_width*subdomain_my, MPI_FLOAT,
-                    find_proc(ipx+1, ipy, nprocx, nprocy), halo_width, subdomain_my,
-                    MPI_FLOAT, win);
+            MPI_Get(&data[halo_width+subdomain_nx][halo_width], 1, column_type,
+                    find_proc(ipx+1, ipy, nprocx, nprocy), halo_width, 1,
+                    column_type, win);
         }
 
         // Y-direction upwind halo
@@ -212,6 +215,23 @@ int main(int argc, char** argv)
         }
     }
 
+    // Write final results to file
+    char fname[256];
+    sprintf(fname, "own_results_process_%d", rank);
+    FILE* fptr_final = fopen(fname, "w");
+    if (!fptr_final) {
+        fprintf(stderr, "Error opening file for process %d\n", rank);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    for (ix = ixstart; ix < ixstop; ++ix) {
+        for (iy = iystart; iy < iystop; ++iy) {
+            fprintf(fptr_final, "%f ", data[ix][iy]);
+        }
+        fprintf(fptr_final, "\n");
+    }
+
+    fclose(fptr_final);
     // Finalize timing!
 
     // analytic solution in array data_an:
